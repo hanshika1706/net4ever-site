@@ -1,3 +1,32 @@
+// Login logic
+function login() {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+        .catch(err => {
+            document.getElementById('loginError').innerText = "Login Failed: " + err.message;
+        });
+}
+
+// Logout logic
+function logout() {
+    firebase.auth().signOut();
+}
+
+// This "Observer" checks if a user is logged in or out
+firebase.auth().onAuthStateChanged((user) => {
+    const loginPage = document.getElementById('loginPage');
+    const appContents = document.getElementById('appContents');
+
+    if (user) {
+        loginPage.style.display = 'none';
+        appContents.style.display = 'block';
+        renderLists(); // Only show data when logged in
+    } else {
+        loginPage.style.display = 'flex';
+        appContents.style.display = 'none';
+    }
+});
 // 1. YOUR FIREBASE CONFIG (Paste your values from the photo here!)
 const firebaseConfig = {
   apiKey: "AIzaSyCjgY7RUJXg0oCGt0i6zgKmBnEcvB1ZOIM",

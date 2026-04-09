@@ -6,31 +6,48 @@
     <title>Net4Ever Billing</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-    <header>
-        <h1>Net4Ever Dashboard</h1>
-        <p>Shared Cloud Sync Active ☁️</p>
-        <input type="file" id="excelUpload" accept=".csv, .xlsx, .xls">
-    </header>
+    <div id="loginPage" class="auth-container">
+        <div class="card">
+            <h2>Net4Ever Login</h2>
+            <p>Enter your credentials to access the dashboard.</p>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()" class="btn-add">Login</button>
+            <p id="loginError" style="color:red; font-size: 0.8em; margin-top: 10px;"></p>
+        </div>
+    </div>
 
-    <main>
-        <section class="card">
-            <h3>+ Add New Customer</h3>
-            <input type="text" id="newName" placeholder="Name">
-            <input type="text" id="newPhone" placeholder="Phone">
-            <input type="date" id="newDate">
-            <button onclick="addNewCustomer()" class="btn-add">Add Customer</button>
-        </section>
+    <div id="appContents" style="display:none">
+        <header>
+            <h1>Net4Ever Dashboard</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="file" id="excelUpload" accept=".csv, .xlsx, .xls">
+                <button onclick="logout()" class="btn-logout">Logout</button>
+            </div>
+            <p>Shared Cloud Sync Active ☁️</p>
+        </header>
 
-        <h2>⚠️ Due for Recharge</h2>
-        <div id="dueList"></div>
+        <main>
+            <section class="card">
+                <h3>+ Add New Customer</h3>
+                <input type="text" id="newName" placeholder="Name">
+                <input type="text" id="newPhone" placeholder="Phone">
+                <input type="date" id="newDate">
+                <button onclick="addNewCustomer()" class="btn-add">Add Customer</button>
+            </section>
 
-        <h2>✅ All Customers</h2>
-        <div id="allList"></div>
-    </main>
+            <h2>⚠️ Due for Recharge</h2>
+            <div id="dueList"></div>
+
+            <h2>✅ All Customers</h2>
+            <div id="allList"></div>
+        </main>
+    </div>
 
     <script src="script.js"></script>
 </body>

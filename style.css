@@ -6,3 +6,25 @@ input { display: block; width: 90%; margin: 10px auto; padding: 10px; border: 1p
 .btn-add { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; width: 100%; cursor: pointer; }
 .btn-paid { background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; margin-top: 10px; cursor: pointer; }
 h2 { font-size: 1.2rem; margin-top: 30px; }
+/* Center the login card */
+.auth-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f4f7f6;
+}
+
+/* Red logout button */
+.btn-logout {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-logout:hover {
+    background: #c0392b;
+}
