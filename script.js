@@ -1,4 +1,18 @@
-// Login logic
+// 1. CONFIGURATION - The "Bridge" to your Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyCjgY-YourActualKeyGoesHere", // REPLACE THIS with your real API Key from Firebase Settings
+    authDomain: "net4ever-95dfd.firebaseapp.com",
+    projectId: "net4ever-95dfd",
+    storageBucket: "net4ever-95dfd.firebasestorage.app",
+    messagingSenderId: "629457995654",
+    appId: "1:629457995654:web:79f631d8cb9e838832ce07"
+};
+
+// 2. INITIALIZE SERVICES
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// 3. AUTHENTICATION (The Security Guard)
 function login() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
@@ -8,12 +22,10 @@ function login() {
         });
 }
 
-// Logout logic
 function logout() {
     firebase.auth().signOut();
 }
 
-// This "Observer" checks if a user is logged in or out
 firebase.auth().onAuthStateChanged((user) => {
     const loginPage = document.getElementById('loginPage');
     const appContents = document.getElementById('appContents');
@@ -21,99 +33,94 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         loginPage.style.display = 'none';
         appContents.style.display = 'block';
-        renderLists(); // Only show data when logged in
+        renderLists(); // App starts only after login
     } else {
         loginPage.style.display = 'flex';
         appContents.style.display = 'none';
     }
 });
-// 1. YOUR FIREBASE CONFIG (Paste your values from the photo here!)
-const firebaseConfig = {
-  apiKey: "AIzaSyCjgY7RUJXg0oCGt0i6zgKmBnEcvB1ZOIM",
-  authDomain: "net4ever-95dfd.firebaseapp.com",
-  projectId: "net4ever-95dfd",
-  storageBucket: "net4ever-95dfd.firebasestorage.app",
-  messagingSenderId: "629457995654",
-  appId: "1:629457995654:web:79f631d8cb9e838832ce07",
-  measurementId: "G-L77EQSH86T"
-};
 
-// 2. Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// 4. DATA DISPLAY (The List Builder)
+async function renderLists() {
+    const dueList = document.getElementById('dueList');
+    const allList = document.getElementById('allList');
+    dueList.innerHTML = '';
+    allList.innerHTML = '';
 
-// 3. Show Data on Screen
-function renderLists() {
-    const today = new Date().toISOString().split('T')[0];
-    const dueDiv = document.getElementById('dueList');
-    const allDiv = document.getElementById('allList');
+    const snapshot = await db.collection('customers').get();
+    const today = new Date();
 
-    // Listen to database changes in REAL-TIME
-    db.collection("customers").orderBy("nextDue", "asc").onSnapshot((querySnapshot) => {
-        dueDiv.innerHTML = '';
-        allDiv.innerHTML = '';
-        
-        querySnapshot.forEach((doc) => {
-            const c = doc.data();
-            const id = doc.id;
-            const item = document.createElement('div');
-            item.className = 'customer-card';
-            item.innerHTML = `
-                <strong>${c.name}</strong><br>
-                Phone: ${c.phone}<br>
-                Due Date: ${c.nextDue}<br>
-                <button class="btn-paid" onclick="markAsPaid('${id}', '${c.nextDue}')">Renew (Paid)</button>
-            `;
+    snapshot.forEach(doc => {
+        const customer = doc.data();
+        const customerId = doc.id;
+        const [day, month, year] = customer.nextDue.split('-');
+        const dueDate = new Date(`${year}-${month}-${day}`);
 
-            if (c.nextDue <= today) {
-                dueDiv.appendChild(item);
-            } else {
-                allDiv.appendChild(item);
-            }
-        });
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div class="customer-info">
+                <strong>${customer.name}</strong><br>
+                Phone: ${customer.phone}<br>
+                Due Date: ${customer.nextDue}
+            </div>
+            <button onclick="renewCustomer('${customerId}', '${customer.nextDue}')" class="btn-add">Renew (Paid)</button>
+        `;
+
+        if (dueDate <= today) {
+            dueList.appendChild(card);
+        } else {
+            allList.appendChild(card);
+        }
     });
 }
 
-// 4. Excel Upload Logic (Saves to Cloud)
-document.getElementById('excelUpload').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
-        
-        jsonData.forEach((row) => {
-            db.collection("customers").add({
-                name: row['Cust Name/Username'] || "Unknown",
-                phone: row['Mobile'] || "N/A",
-                nextDue: row['Expired On'] || new Date().toISOString().split('T')[0]
-            });
-        });
-        alert("Cloud Sync Successful!");
-    };
-    reader.readAsArrayBuffer(file);
-});
-
-// 5. Update Date in Cloud
-async function markAsPaid(id, currentDueDate) {
-    let d = new Date(currentDueDate);
-    d.setMonth(d.getMonth() + 1);
-    const newDate = d.toISOString().split('T')[0];
-    await db.collection("customers").doc(id).update({ nextDue: newDate });
-}
-
-// 6. Manual Add
+// 5. MANUAL ADD FUNCTION
 async function addNewCustomer() {
     const name = document.getElementById('newName').value;
     const phone = document.getElementById('newPhone').value;
-    const date = document.getElementById('newDate').value;
-    if(name && date) {
-        await db.collection("customers").add({ name, phone, nextDue: date });
-        document.getElementById('newName').value = '';
-        document.getElementById('newPhone').value = '';
-    }
+    const nextDueRaw = document.getElementById('newDate').value;
+
+    if (!name || !phone || !nextDueRaw) return alert("Fill all fields");
+
+    const [y, m, d] = nextDueRaw.split('-');
+    const nextDue = `${d}-${m}-${y}`;
+
+    await db.collection('customers').add({ name, phone, nextDue });
+    renderLists();
 }
 
-renderLists();
+// 6. RENEWAL FUNCTION
+async function renewCustomer(id, currentDue) {
+    const [d, m, y] = currentDue.split('-');
+    let nextDate = new Date(`${y}-${m}-${d}`);
+    nextDate.setMonth(nextDate.getMonth() + 1);
+
+    const newDue = `${String(nextDate.getDate()).padStart(2, '0')}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${nextDate.getFullYear()}`;
+    await db.collection('customers').doc(id).update({ nextDue: newDue });
+    renderLists();
+}
+
+// 7. EXCEL UPLOAD LOGIC
+document.getElementById('excelUpload')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        for (const row of json) {
+            await db.collection('customers').add({
+                name: row.Name || row.name,
+                phone: row.Phone || row.phone,
+                nextDue: row['Due Date'] || row.nextDue
+            });
+        }
+        alert("Excel Uploaded to Cloud!");
+        renderLists();
+    };
+    reader.readAsArrayBuffer(file);
+});
