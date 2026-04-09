@@ -1,18 +1,20 @@
-// 1. CONFIGURATION - The "Bridge" to your Firebase
+// 1. YOUR REAL CONFIG (Paste the part you copied from Firebase here)
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyCjgY-YourActualKeyGoesHere", // REPLACE THIS with your real API Key from Firebase Settings
-    authDomain: "net4ever-95dfd.firebaseapp.com",
-    projectId: "net4ever-95dfd",
-    storageBucket: "net4ever-95dfd.firebasestorage.app",
-    messagingSenderId: "629457995654",
-    appId: "1:629457995654:web:79f631d8cb9e838832ce07"
+  apiKey: "AIzaSyCjgY7RUJXg0oCgtOI6zgKmBnEcvBlZOIM",
+  authDomain: "net4ever-95dfd.firebaseapp.com",
+  projectId: "net4ever-95dfd",
+  storageBucket: "net4ever-95dfd.firebasestorage.app",
+  messagingSenderId: "629457995654",
+  appId: "1:629457995654:web:79f631d8cb9e838832ce07",
+  measurementId: "G-L77EQSH86T"
 };
 
-// 2. INITIALIZE SERVICES
+// 2. INITIALIZE (This MUST be at the top to fix the red error)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 3. AUTHENTICATION (The Security Guard)
+// 3. AUTHENTICATION LOGIC
 function login() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
@@ -33,17 +35,19 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         loginPage.style.display = 'none';
         appContents.style.display = 'block';
-        renderLists(); // App starts only after login
+        renderLists(); 
     } else {
         loginPage.style.display = 'flex';
         appContents.style.display = 'none';
     }
 });
 
-// 4. DATA DISPLAY (The List Builder)
+// 4. DATA LOGIC
 async function renderLists() {
     const dueList = document.getElementById('dueList');
     const allList = document.getElementById('allList');
+    if (!dueList || !allList) return; 
+
     dueList.innerHTML = '';
     allList.innerHTML = '';
 
@@ -59,12 +63,12 @@ async function renderLists() {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-            <div class="customer-info">
+            <div>
                 <strong>${customer.name}</strong><br>
                 Phone: ${customer.phone}<br>
-                Due Date: ${customer.nextDue}
+                Due: ${customer.nextDue}
             </div>
-            <button onclick="renewCustomer('${customerId}', '${customer.nextDue}')" class="btn-add">Renew (Paid)</button>
+            <button onclick="renewCustomer('${customerId}', '${customer.nextDue}')" class="btn-add">Renew</button>
         `;
 
         if (dueDate <= today) {
@@ -75,22 +79,7 @@ async function renderLists() {
     });
 }
 
-// 5. MANUAL ADD FUNCTION
-async function addNewCustomer() {
-    const name = document.getElementById('newName').value;
-    const phone = document.getElementById('newPhone').value;
-    const nextDueRaw = document.getElementById('newDate').value;
-
-    if (!name || !phone || !nextDueRaw) return alert("Fill all fields");
-
-    const [y, m, d] = nextDueRaw.split('-');
-    const nextDue = `${d}-${m}-${y}`;
-
-    await db.collection('customers').add({ name, phone, nextDue });
-    renderLists();
-}
-
-// 6. RENEWAL FUNCTION
+// 5. RENEW & ADD FUNCTIONS
 async function renewCustomer(id, currentDue) {
     const [d, m, y] = currentDue.split('-');
     let nextDate = new Date(`${y}-${m}-${d}`);
@@ -101,11 +90,23 @@ async function renewCustomer(id, currentDue) {
     renderLists();
 }
 
-// 7. EXCEL UPLOAD LOGIC
+async function addNewCustomer() {
+    const name = document.getElementById('newName').value;
+    const phone = document.getElementById('newPhone').value;
+    const nextDueRaw = document.getElementById('newDate').value;
+    if (!name || !phone || !nextDueRaw) return alert("Fill all fields");
+
+    const [y, m, d] = nextDueRaw.split('-');
+    const nextDue = `${d}-${m}-${y}`;
+
+    await db.collection('customers').add({ name, phone, nextDue });
+    renderLists();
+}
+
+// 6. EXCEL UPLOAD
 document.getElementById('excelUpload')?.addEventListener('change', (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
-
     reader.onload = async (event) => {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -119,7 +120,7 @@ document.getElementById('excelUpload')?.addEventListener('change', (e) => {
                 nextDue: row['Due Date'] || row.nextDue
             });
         }
-        alert("Excel Uploaded to Cloud!");
+        alert("Synced to Cloud!");
         renderLists();
     };
     reader.readAsArrayBuffer(file);
