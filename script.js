@@ -1,35 +1,51 @@
-const db = new Dexie("Net4EverDB");
-db.version(1).stores({ customers: '++id, name, phone, nextDue' });
+// 1. YOUR FIREBASE CONFIG (Paste your values from the photo here!)
+const firebaseConfig = {
+  apiKey: "AIzaSyCjgY7RUJXg0oCGt0i6zgKmBnEcvB1ZOIM",
+  authDomain: "net4ever-95dfd.firebaseapp.com",
+  projectId: "net4ever-95dfd",
+  storageBucket: "net4ever-95dfd.firebasestorage.app",
+  messagingSenderId: "629457995654",
+  appId: "1:629457995654:web:79f631d8cb9e838832ce07",
+  measurementId: "G-L77EQSH86T"
+};
 
-// Function to show data on screen
-async function renderLists() {
-    const all = await db.customers.toArray();
+// 2. Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// 3. Show Data on Screen
+function renderLists() {
     const today = new Date().toISOString().split('T')[0];
     const dueDiv = document.getElementById('dueList');
     const allDiv = document.getElementById('allList');
-    
-    dueDiv.innerHTML = ''; 
-    allDiv.innerHTML = '';
 
-    if (all.length === 0) {
-        allDiv.innerHTML = "<p style='color:gray'>No customers found. Please upload Excel.</p>";
-    }
+    // Listen to database changes in REAL-TIME
+    db.collection("customers").orderBy("nextDue", "asc").onSnapshot((querySnapshot) => {
+        dueDiv.innerHTML = '';
+        allDiv.innerHTML = '';
+        
+        querySnapshot.forEach((doc) => {
+            const c = doc.data();
+            const id = doc.id;
+            const item = document.createElement('div');
+            item.className = 'customer-card';
+            item.innerHTML = `
+                <strong>${c.name}</strong><br>
+                Phone: ${c.phone}<br>
+                Due Date: ${c.nextDue}<br>
+                <button class="btn-paid" onclick="markAsPaid('${id}', '${c.nextDue}')">Renew (Paid)</button>
+            `;
 
-    all.forEach(c => {
-        const item = document.createElement('div');
-        item.className = 'customer-card';
-        item.innerHTML = `
-            <strong>${c.name}</strong><br>
-            Phone: ${c.phone}<br>
-            Due Date: ${c.nextDue}<br>
-            <button class="btn-paid" onclick="markAsPaid(${c.id}, '${c.nextDue}')">Renew (Paid)</button>
-        `;
-        if (c.nextDue <= today) { dueDiv.appendChild(item); } 
-        else { allDiv.appendChild(item); }
+            if (c.nextDue <= today) {
+                dueDiv.appendChild(item);
+            } else {
+                allDiv.appendChild(item);
+            }
+        });
     });
 }
 
-// Logic for Excel Upload
+// 4. Excel Upload Logic (Saves to Cloud)
 document.getElementById('excelUpload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -39,28 +55,36 @@ document.getElementById('excelUpload').addEventListener('change', function(e) {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
         
-        console.log("Excel Data Detected:", jsonData[0]); // This helps us debug
-
-        jsonData.forEach(async (row) => {
-            await db.customers.add({
-                // Using exact headers from your file
-                name: row['Cust Name/Username'] || row['NAME'] || "Unknown",
-                phone: row['Mobile'] || row['PHONE'] || "N/A",
-                nextDue: row['Expired On'] || row['DATE'] || new Date().toISOString().split('T')[0]
+        jsonData.forEach((row) => {
+            db.collection("customers").add({
+                name: row['Cust Name/Username'] || "Unknown",
+                phone: row['Mobile'] || "N/A",
+                nextDue: row['Expired On'] || new Date().toISOString().split('T')[0]
             });
         });
-        alert("Import Successful!");
-        renderLists();
+        alert("Cloud Sync Successful!");
     };
     reader.readAsArrayBuffer(file);
 });
 
+// 5. Update Date in Cloud
 async function markAsPaid(id, currentDueDate) {
     let d = new Date(currentDueDate);
     d.setMonth(d.getMonth() + 1);
-    await db.customers.update(id, { nextDue: d.toISOString().split('T')[0] });
-    renderLists();
+    const newDate = d.toISOString().split('T')[0];
+    await db.collection("customers").doc(id).update({ nextDue: newDate });
 }
 
-// Run this when page loads
+// 6. Manual Add
+async function addNewCustomer() {
+    const name = document.getElementById('newName').value;
+    const phone = document.getElementById('newPhone').value;
+    const date = document.getElementById('newDate').value;
+    if(name && date) {
+        await db.collection("customers").add({ name, phone, nextDue: date });
+        document.getElementById('newName').value = '';
+        document.getElementById('newPhone').value = '';
+    }
+}
+
 renderLists();
