@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net4Ever Billing</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Net4Ever Dashboard</h1>
+        <p>Upload Excel to start or add manually</p>
+        <input type="file" id="excelUpload" accept=".csv, .xlsx" />
+    </header>
+
+    <main>
+        <section class="card">
+            <h3>+ Add New Customer</h3>
+            <input type="text" id="newName" placeholder="Name">
+            <input type="text" id="newPhone" placeholder="Phone">
+            <input type="date" id="newDate">
+            <button onclick="addNewCustomer()" class="btn-add">Add Customer</button>
+        </section>
+
+        <h2>⚠️ Due for Recharge</h2>
+        <div id="dueList"></div>
+
+        <h2>✅ All Customers</h2>
+        <div id="allList"></div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

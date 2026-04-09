@@ -1,0 +1,8 @@
+body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; max-width: 600px; margin: auto; }
+header { background: #007bff; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+.card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+input { display: block; width: 90%; margin: 10px auto; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+.customer-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #007bff; }
+.btn-add { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; width: 100%; cursor: pointer; }
+.btn-paid { background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; margin-top: 10px; cursor: pointer; }
+h2 { font-size: 1.2rem; margin-top: 30px; }
